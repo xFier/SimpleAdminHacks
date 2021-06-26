@@ -7,10 +7,10 @@ import com.programmerdan.minecraft.simpleadminhacks.framework.SimpleHack;
 import com.programmerdan.minecraft.simpleadminhacks.framework.utilities.TeleportUtil;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import net.md_5.bungee.api.ChatColor;
 import org.apache.commons.lang3.time.DateUtils;
-import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -36,7 +36,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityResurrectEvent;
-import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -63,7 +62,7 @@ import vg.civcraft.mc.civmodcore.inventory.items.ItemUtils;
  * It's part of a series of focused hacks.
  *
  * {@link GameFixes} is focused on things that are broken or don't work, and attempts to fix them.
- * {@link GameFeatures} focuses on enabling and disabling features, like elytra, various potion states.
+ * {@link GameFeatures} focuses on enabling and disabling features, like ender chests, various potion states.
  * {@link GameTuning} neither fixes nor disables, but rather adjusts and reconfigures.
  *
  * Currently you can control the following:
@@ -169,13 +168,6 @@ public class GameFeatures extends SimpleHack<GameFeaturesConfig> implements List
 
 			genStatus.append("  Totem of Undying effects are ");
 			if (config.isTotemPowers()) {
-				genStatus.append("enabled\n");
-			} else {
-				genStatus.append("disabled\n");
-			}
-
-			genStatus.append("  Elytra use is ");
-			if (config.isElytraUse()) {
 				genStatus.append("enabled\n");
 			} else {
 				genStatus.append("disabled\n");
@@ -365,13 +357,6 @@ public class GameFeatures extends SimpleHack<GameFeaturesConfig> implements List
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void disableElytraUse(EntityToggleGlideEvent event) {
-		if (!config.isEnabled() || config.isElytraUse()) return;
-
-		event.setCancelled(true);
-	}
-
 	@EventHandler(priority = EventPriority.HIGH)
 	public void weepingAngelListener(PlayerDeathEvent event) {
 		if (!config.isEnabled()) return;
@@ -405,20 +390,38 @@ public class GameFeatures extends SimpleHack<GameFeaturesConfig> implements List
 		}
 	}
 
-	private void banPlayer(Player p, int minutes) {
-		if (!config.isWeepingAngel()) {
+	private void banPlayer(final Player player, final int banTimeMS) {
+		if (!config().isWeepingAngel()) {
 			return;
 		}
-
-		Date exp = DateUtils.addMinutes(new Date(), minutes);
-		Bukkit.getServer().getBanList(BanList.Type.NAME).addBan(p.getName(), "You've been banned for " + minutes +
-				" minutes due to your death.", exp, "weepingAngel");
-
-		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(SimpleAdminHacks.instance(), new Runnable() {
-			public void run() {
-				p.kickPlayer("You've been banned for " + minutes + " minutes due to your death.");
+		final String banLengthMessage;
+		if (banTimeMS < 60_000) { // 1 Minute
+			final var seconds = TimeUnit.MILLISECONDS.toSeconds(banTimeMS);
+			if (seconds == 1) {
+				banLengthMessage = "1 second";
 			}
-		}, 2L);
+			else {
+				banLengthMessage = seconds + " seconds";
+			}
+		}
+		else {
+			final var minutes = TimeUnit.MILLISECONDS.toMinutes(banTimeMS);
+			if (minutes == 1) {
+				banLengthMessage = "1 minute";
+			}
+			else {
+				banLengthMessage = minutes + " minutes";
+			}
+		}
+		player.banPlayer(
+				// Ban Message
+				"You've been banned for " + banLengthMessage + " due to your death.",
+				// Ban Expiry
+				DateUtils.addMilliseconds(new Date(), banTimeMS),
+				// Ban Source
+				"Death",
+				// Kick Player If Online
+				true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

@@ -92,6 +92,11 @@ hacks:
     announcements:
       - "[\"\",{\"text\":\"Buy \"},{\"text\":\"Dogecoin\",\"color\":\"dark_red\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://www.coindesk.com/price/dogecoin\"}},{\"text\":\"!\"}]"
       - "[\"\",{\"text\":\"Very \"},{\"text\":\"Wow!\",\"italic\":true,\"hoverEvent\":{\"action\":\"show_text\",\"contents\":\"Wow!\"}}]"
+  ElytraFeatures:
+    enabled: true
+    disableFlight: false
+    disableFireworkBoosting: false
+    disableFlightInCombat: false
   EventDebugHack:
     enabled: true
   EventHandlerList:
@@ -259,14 +264,12 @@ hacks:
     # Enderchests is also true = enabled and false = disabled
     enderChestPlacement: true
     enderChestUse: false
-    # ElytraUse: true  = enabled, false = disabled
-    elytraUse: true
     chorusFruitTeleportation: false
-    # WeepingAngel bans people when they die, the numbers are in minutes.
+    # WeepingAngel bans people when they die, the numbers are in milliseconds.
     weepingAngel:
       enabled: false
-      environment: 1
-      playerKill: 5
+      environment: 60000 # 1 Minute
+      playerKill: 300000 # 5 Minutes
     # prevent use of buckets or dispensing water in hell biomes
     blockWaterInHell: true
     minecartTeleport: true
